@@ -1,9 +1,9 @@
-<script setup lang="ts"></script>
+<script setup>
+import MainScene from './components/MainScene.vue';
+</script>
 
 <template>
-    <div>
-        <h1>Welcome to Your Vue.js App</h1>
+    <div class="w-screen h-screen flex">
+        <MainScene />
     </div>
 </template>
-
-<style scoped></style>
