@@ -1,86 +1,68 @@
 <template>
-    <div ref="canvasContainer" class="w-full h-screen"></div>
+    <div class="screen-container">
+        <ConfigSelectionComponent />
+        <div ref="container" class="viewer"></div>
+        <!-- <div class="camera-debug">
+            {{ cameraInfo }}
+        </div> -->
+    </div>
 </template>
 
 <script setup>
+import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { onMounted, ref } from 'vue';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { useConfigurationStore } from '../stores/configuratorStore';
+import { use3dSceneStore } from '../stores/3dSceneStore';
+import ConfigSelectionComponent from './ConfigSelectionComponent.vue';
 
-const canvasContainer = ref(null);
+const container = ref(null);
+const sceneStore = use3dSceneStore();
+const configuratorStore = useConfigurationStore();
+let animationId;
 
-onMounted(() => {
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xffffff);
+// const cameraInfo = computed(() => {
+//     const p = sceneStore.cameraPosition;
+//     return `x: ${p.x.toFixed(2)} y: ${p.y.toFixed(2)} z: ${p.z.toFixed(2)}`;
+// });
 
-    const camera = new THREE.PerspectiveCamera(
-        50,
-        window.innerWidth / window.innerHeight,
-        0.1,
-        1000
+onMounted(async () => {
+    await nextTick();
+
+    sceneStore.init3dScene(
+        container.value.clientWidth,
+        container.value.clientHeight,
+        window.devicePixelRatio,
+        configuratorStore
     );
-    camera.position.set(130, 70, 180);
+    sceneStore.loadModel('/models/golf/r_modded.glb', configuratorStore);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    canvasContainer.value.appendChild(renderer.domElement);
+    container.value.appendChild(sceneStore.renderer.domElement);
 
-    // Światło
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
-    scene.add(ambientLight);
-
-    // Ładowanie modelu
-    const loader = new GLTFLoader();
-    loader.load(
-        '/models/nissan_gtr.glb',
-        gltf => {
-            scene.add(gltf.scene);
-            gltf.scene.traverse(child => {
-                if (child.isMesh) {
-                    child.material.roughness = 0.5; // niskie = błyszczące
-                    child.material.metalness = 0.9; // wysoki = metaliczny połysk
-                    child.material.clearcoat = 1.0; // dodaje warstwę lakieru
-                    child.material.clearcoatRoughness = 0.03; // gładki lakier
-                }
-            });
-        },
-        undefined,
-        error => {
-            console.error(error);
-        }
-    );
-
-    // Kontrolki
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-
-    // Animacja
-    const animate = function () {
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
-
-        // console.log(
-        //     `Camera position: x=${camera.position.x.toFixed(
-        //         2
-        //     )}, y=${camera.position.y.toFixed(
-        //         2
-        //     )}, z=${camera.position.z.toFixed(2)}`
-        // );
-    };
     animate();
+    window.addEventListener('resize', onResize);
+});
 
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-    });
+function animate() {
+    animationId = requestAnimationFrame(animate);
+    // sceneStore.updateCameraPosition();
+    sceneStore.controls.update();
+    sceneStore.renderer.render(sceneStore.scene, sceneStore.camera);
+}
+
+function onResize() {
+    const w = container.value.clientWidth;
+    const h = container.value.clientHeight;
+    sceneStore.camera.aspect = w / h;
+    sceneStore.camera.updateProjectionMatrix();
+    sceneStore.renderer.setSize(w, h);
+}
+
+onBeforeUnmount(() => {
+    cancelAnimationFrame(animationId);
+    sceneStore.renderer.dispose();
+    window.removeEventListener('resize', onResize);
 });
 </script>
-
-<style scoped>
-canvas {
-    display: block;
-}
-</style>
