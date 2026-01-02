@@ -2,10 +2,12 @@ import { defineStore } from 'pinia';
 import type {
     availableBodyColors,
     availableCaliperColors,
+    availableCarParts,
     availableRimsColors,
     availableWindowTints,
     bodyAttributes,
     calipersAttributes,
+    CarPartColorMap,
     rimsAttributes,
     sideMirrorsAttributes,
     windowsAttributes,
@@ -18,6 +20,7 @@ export const useConfigurationStore = defineStore('configurationStore', {
         rimsConfig: rimsAttributes;
         calipersConfig: calipersAttributes;
         sideMirrorsConfig: sideMirrorsAttributes;
+        modelPath: string;
     } => ({
         bodyConfig: {
             color: 'white',
@@ -44,9 +47,12 @@ export const useConfigurationStore = defineStore('configurationStore', {
         },
         sideMirrorsConfig: {
             color: 'black',
-            metalness: 0.2,
-            roughness: 0.6,
+            metalness: 0.8,
+            roughness: 0.8,
+            clearcoat: 0.1,
+            clearcoatRoughness: 0.01,
         },
+        modelPath: '/models/golf/r_modded.glb',
     }),
 
     getters: {
@@ -55,6 +61,7 @@ export const useConfigurationStore = defineStore('configurationStore', {
         getRimsConfig: state => state.rimsConfig,
         getCalipersConfig: state => state.calipersConfig,
         getSideMirrorsConfig: state => state.sideMirrorsConfig,
+        getModelPath: state => state.modelPath,
     },
 
     actions: {
@@ -72,6 +79,33 @@ export const useConfigurationStore = defineStore('configurationStore', {
         },
         setSideMirrorsColor(color: availableBodyColors) {
             this.sideMirrorsConfig.color = color;
+        },
+        setCarPartColor(
+            carPart: availableCarParts,
+            color:
+                | availableBodyColors
+                | availableCaliperColors
+                | availableRimsColors
+                | availableWindowTints
+        ) {
+            switch (carPart) {
+                case 'all_windows':
+                    this.setWindowsColor(color);
+                    break;
+                case 'body':
+                    this.setBodyColor(color);
+                    break;
+                case 'calipers':
+                    this.setCalipersColor(color);
+                    break;
+                case 'rims':
+                    this.setRimsColor(color);
+                    break;
+                case 'side_mirrors':
+                    this.setSideMirrorsColor(color);
+                    break;
+            }
+            console.log(this.bodyConfig.color);
         },
     },
 });

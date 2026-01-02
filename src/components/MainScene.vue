@@ -37,7 +37,7 @@ onMounted(async () => {
         window.devicePixelRatio,
         configuratorStore
     );
-    sceneStore.loadModel('/models/golf/r_modded.glb', configuratorStore);
+    sceneStore.loadModel(configuratorStore);
 
     container.value.appendChild(sceneStore.renderer.domElement);
 

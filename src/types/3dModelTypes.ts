@@ -2,8 +2,8 @@ export type availableCarParts =
     | 'body'
     | 'all_windows'
     | 'rims'
-    | 'calipers'
-    | 'side_mirrors';
+    | 'side_mirrors'
+    | 'calipers';
 
 export type availableBodyColors =
     | 'white'
@@ -55,4 +55,6 @@ export interface sideMirrorsAttributes {
     color: availableBodyColors;
     metalness: number;
     roughness: number;
+    clearcoat: number;
+    clearcoatRoughness: number;
 }

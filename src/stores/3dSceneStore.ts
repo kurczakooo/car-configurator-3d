@@ -1,10 +1,16 @@
 import { defineStore } from 'pinia';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { useConfigurationStore } from './configuratorStore';
 import { markRaw } from 'vue';
+import type {
+    bodyAttributes,
+    calipersAttributes,
+    rimsAttributes,
+    sideMirrorsAttributes,
+    windowsAttributes,
+} from '../types/3dModelTypes';
 
 export const use3dSceneStore = defineStore('3dSceneStore', {
     state: (): {
@@ -19,8 +25,14 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
         ground: THREE.Mesh | null;
         controls: OrbitControls | null;
         loader: GLTFLoader;
-        car: THREE.Object3D | null;
         cameraPosition: { x: any; y: any; z: any };
+        materials: {
+            body: THREE.MeshPhysicalMaterial | null;
+            windows: THREE.MeshPhysicalMaterial | null;
+            rims: THREE.MeshPhysicalMaterial | null;
+            calipers: THREE.MeshPhysicalMaterial | null;
+            sideMirrors: THREE.MeshPhysicalMaterial | null;
+        };
     } => ({
         width: 1,
         height: 1,
@@ -33,8 +45,14 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
         ground: null,
         controls: null,
         loader: markRaw(new GLTFLoader()),
-        car: null,
         cameraPosition: { x: 0, y: 0, z: 0 },
+        materials: {
+            body: null,
+            windows: null,
+            rims: null,
+            calipers: null,
+            sideMirrors: null,
+        },
     }),
 
     getters: {},
@@ -120,95 +138,116 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             this.controls.update();
         },
 
-        loadModel(
-            model_path: string,
-            configuratorStore: ReturnType<typeof useConfigurationStore>
-        ) {
+        loadModel(configuratorStore: ReturnType<typeof useConfigurationStore>) {
             // Materials
-            const bodyMaterial = markRaw(
+            this.materials.body = markRaw(
                 new THREE.MeshPhysicalMaterial(configuratorStore.getBodyConfig)
             );
-            const glassMaterial = markRaw(
+            this.materials.windows = markRaw(
                 new THREE.MeshPhysicalMaterial(
                     configuratorStore.getWindowsConfig
                 )
             );
-            const calipersMaterial = markRaw(
+            this.materials.rims = markRaw(
+                new THREE.MeshPhysicalMaterial(configuratorStore.getRimsConfig)
+            );
+            this.materials.calipers = markRaw(
                 new THREE.MeshPhysicalMaterial(
                     configuratorStore.getCalipersConfig
                 )
             );
-            const rimsMaterial = markRaw(
-                new THREE.MeshPhysicalMaterial(configuratorStore.getRimsConfig)
-            );
-            const sideMirrorsMaterial = markRaw(
+            this.materials.sideMirrors = markRaw(
                 new THREE.MeshPhysicalMaterial(
                     configuratorStore.getSideMirrorsConfig
                 )
             );
 
             // Load model
-            this.loader.load(model_path, (gltf: GLTFLoader) => {
-                const car = gltf.scene.children[0];
+            this.loader.load(
+                configuratorStore.getModelPath,
+                (gltf: GLTFLoader) => {
+                    const car = gltf.scene.children[0];
 
-                this.scaleToSize(car, 4);
+                    this.scaleToSize(car, 4);
 
-                const body = car.getObjectByName('body');
-                const glass = car.getObjectByName('all_windows');
-                const calipers = car.getObjectByName('calipers');
-                const rims = car.getObjectByName('rims');
-                const sideMirrors = car.getObjectByName('side_mirrors');
+                    const body = car.getObjectByName('body');
+                    const glass = car.getObjectByName('all_windows');
+                    const calipers = car.getObjectByName('calipers');
+                    const rims = car.getObjectByName('rims');
+                    const sideMirrors = car.getObjectByName('side_mirrors');
 
-                if (body) body.material = bodyMaterial;
-                if (glass) glass.material = glassMaterial;
-                if (calipers) calipers.material = calipersMaterial;
-                if (rims) rims.material = rimsMaterial;
-                if (sideMirrors) sideMirrors.material = sideMirrorsMaterial;
+                    if (body && this.materials.body)
+                        body.material = this.materials.body;
+                    if (glass && this.materials.windows)
+                        glass.material = this.materials.windows;
+                    if (calipers && this.materials.calipers)
+                        calipers.material = this.materials.calipers;
+                    if (rims && this.materials.rims)
+                        rims.material = this.materials.rims;
+                    if (sideMirrors && this.materials.sideMirrors)
+                        sideMirrors.material = this.materials.sideMirrors;
 
-                gltf.scene.traverse((obj: THREE.Object3D) => {
-                    if (obj.isMesh) {
-                        obj.castShadow = true;
-                        obj.receiveShadow = true;
-                    }
-                });
+                    gltf.scene.traverse((obj: THREE.Object3D) => {
+                        if (obj.isMesh) {
+                            obj.castShadow = true;
+                            obj.receiveShadow = true;
+                        }
+                    });
 
-                this.car = car;
-                this.scene.add(car);
-            });
+                    this.scene.add(car);
+                }
+            );
         },
 
-        removeCarModelFromScene() {
-            if (!this.car) return;
+        updateBodyMaterial(config: bodyAttributes) {
+            if (!this.materials.body) return;
 
-            this.scene.remove(this.car);
-
-            this.car.traverse((obj: THREE.Object3D) => {
-                if ((obj as THREE.Mesh).isMesh) {
-                    const mesh = obj as THREE.Mesh;
-
-                    mesh.geometry.dispose();
-
-                    if (Array.isArray(mesh.material)) {
-                        mesh.material.forEach((mat: THREE.Material) =>
-                            this.disposeMaterial(mat)
-                        );
-                    } else {
-                        this.disposeMaterial(mesh.material);
-                    }
-                }
-            });
-
-            this.car = null;
+            this.materials.body.color.set(config.color);
+            this.materials.body.metalness = config.metalness;
+            this.materials.body.roughness = config.roughness;
+            this.materials.body.clearcoat = config.clearcoat;
+            this.materials.body.clearcoatRoughness = config.clearcoatRoughness;
+            this.materials.body.needsUpdate = true;
         },
 
-        disposeMaterial(material: THREE.Material) {
-            for (const key in material) {
-                const value = material[key];
-                if (value && value.isTexture) {
-                    value.dispose();
-                }
-            }
-            material.dispose();
+        updateWindowsMaterial(config: windowsAttributes) {
+            if (!this.materials.windows) return;
+
+            this.materials.windows.color.set(config.color);
+            this.materials.windows.metalness = config.metalness;
+            this.materials.windows.roughness = config.roughness;
+            this.materials.windows.transmission = config.transmission;
+            this.materials.windows.needsUpdate = true;
+        },
+
+        updateRimsMaterial(config: rimsAttributes) {
+            if (!this.materials.rims) return;
+
+            this.materials.rims.color.set(config.color);
+            this.materials.rims.metalness = config.metalness;
+            this.materials.rims.roughness = config.roughness;
+            this.materials.rims.needsUpdate = true;
+        },
+
+        updateSideMirrorsMaterial(config: sideMirrorsAttributes) {
+            if (!this.materials.sideMirrors) return;
+
+            this.materials.sideMirrors.color.set(config.color);
+            this.materials.sideMirrors.metalness = config.metalness;
+            this.materials.sideMirrors.roughness = config.roughness;
+            this.materials.sideMirrors.clearcoat = config.clearcoat;
+            this.materials.sideMirrors.clearcoatRoughness =
+                config.clearcoatRoughness;
+            this.materials.sideMirrors.needsUpdate = true;
+        },
+
+        updateCalipersMaterial(config: calipersAttributes) {
+            if (!this.materials.calipers) return;
+
+            this.materials.calipers.color.set(config.color);
+            this.materials.calipers.metalness = config.metalness;
+            this.materials.calipers.roughness = config.roughness;
+            this.materials.calipers.needsUpdate = true;
         },
 
         scaleToSize(object: THREE.Object3D, targetLength = 4) {
