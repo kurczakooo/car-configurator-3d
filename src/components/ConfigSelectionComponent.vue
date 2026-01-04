@@ -92,5 +92,18 @@ function toggleColorChange(
         </button>
 
         <p>===============================================</p>
+
+        <p>TO DO</p>
+        <p>- wystylować buttony i sekcje</p>
+        <p>- dodać opcje kamery od środka auta</p>
+        <p>
+            - dodać wiecej opcji konfiguracji które są mockowe np. rodzaj
+            silnika itp, które nic nie zmieniaja w modelu ale daja realizm
+            konfiguratora
+        </p>
+        <p>
+            - dodac info o cenie i cenach różnych opcji, tak zeby sie zliczała
+            cena i było podsumowanie na koncu
+        </p>
     </div>
 </template>
