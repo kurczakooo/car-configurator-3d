@@ -65,18 +65,76 @@ h1 {
 
 .right-side-config-container {
     position: absolute;
-    flex: 1;
+    right: 0;
+    top: 0;
     height: 100%;
-    width: 31%;
-    justify-self: end;
-    border-radius: 0.5rem;
-    box-sizing: border-box;
-    padding: 1rem;
+    width: 32%;
+    padding: 1.5rem;
+
+    background: linear-gradient(180deg, #1c1c1c, #111);
+    color: #f2f2f2;
 
     overflow-y: auto;
-
-    background-color: azure;
-    color: black;
-
-    box-shadow: -10px 0 5px -2px var(--unselectedtext);
+    box-shadow: -12px 0 30px rgba(0, 0, 0, 0.6);
 }
+
+.car-title {
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.config-section {
+    margin-bottom: 2rem;
+}
+
+.config-section h2 {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #aaa;
+    margin-bottom: 0.75rem;
+}
+
+.option-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 0.6rem;
+}
+
+.option-grid button {
+    background: #222;
+    border: 1px solid #333;
+    color: #eee;
+
+    padding: 0.6rem 0.4rem;
+    border-radius: 0.4rem;
+
+    font-size: 0.85rem;
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        transform 0.1s ease,
+        box-shadow 0.2s ease;
+}
+
+.option-grid button:hover {
+    background: #2f2f2f;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.option-grid button:active {
+    transform: translateY(0);
+    background: #444;
+}
+
+.option-grid button.selected {
+    background: var(--selectedcomponentbackground);
+    border-color: #fff;
+    box-shadow: var(--shadow-active);
+    transform: translateY(0);
+}
+

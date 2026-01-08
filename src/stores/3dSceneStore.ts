@@ -162,42 +162,39 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
                 )
             );
 
-            // Load model
-            this.loader.load(
-                configuratorStore.getModelPath,
-                (gltf: GLTFLoader) => {
-                    const car = gltf.scene.children[0];
+        // Load model
+        this.loader.load(
+        configuratorStore.modelPath,
+        (gltf: GLTF) => {
+            const car = gltf.scene.children[0];
 
-                    this.scaleToSize(car, 4);
+            this.scaleToSize(car, 4);
 
-                    const body = car.getObjectByName('body');
-                    const glass = car.getObjectByName('all_windows');
-                    const calipers = car.getObjectByName('calipers');
-                    const rims = car.getObjectByName('rims');
-                    const sideMirrors = car.getObjectByName('side_mirrors');
+            const body = car.getObjectByName('body');
+            const glass = car.getObjectByName('all_windows');
+            const calipers = car.getObjectByName('calipers');
+            const rims = car.getObjectByName('rims');
+            const sideMirrors = car.getObjectByName('side_mirrors');
 
-                    if (body && this.materials.body)
-                        body.material = this.materials.body;
-                    if (glass && this.materials.windows)
-                        glass.material = this.materials.windows;
-                    if (calipers && this.materials.calipers)
-                        calipers.material = this.materials.calipers;
-                    if (rims && this.materials.rims)
-                        rims.material = this.materials.rims;
-                    if (sideMirrors && this.materials.sideMirrors)
-                        sideMirrors.material = this.materials.sideMirrors;
+            if (body && this.materials.body) body.material = this.materials.body;
+            if (glass && this.materials.windows) glass.material = this.materials.windows;
+            if (calipers && this.materials.calipers) calipers.material = this.materials.calipers;
+            if (rims && this.materials.rims) rims.material = this.materials.rims;
+            if (sideMirrors && this.materials.sideMirrors)
+                sideMirrors.material = this.materials.sideMirrors;
 
-                    gltf.scene.traverse((obj: THREE.Object3D) => {
-                        if (obj.isMesh) {
-                            obj.castShadow = true;
-                            obj.receiveShadow = true;
-                        }
-                    });
-
-                    this.scene.add(car);
+            gltf.scene.traverse(obj => {
+                if ((obj as THREE.Mesh).isMesh) {
+                    obj.castShadow = true;
+                    obj.receiveShadow = true;
                 }
-            );
+            });
+
+            this.scene.add(car);
+            }
+        );
         },
+
 
         updateBodyMaterial(config: bodyAttributes) {
             if (!this.materials.body) return;

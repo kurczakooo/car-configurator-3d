@@ -1,111 +1,98 @@
 import { defineStore } from 'pinia';
 import type {
-    availableBodyColors,
-    availableCaliperColors,
-    availableCarParts,
-    availableRimsColors,
-    availableWindowTints,
     bodyAttributes,
-    calipersAttributes,
-    CarPartColorMap,
-    rimsAttributes,
-    sideMirrorsAttributes,
     windowsAttributes,
+    rimsAttributes,
+    calipersAttributes,
+    sideMirrorsAttributes,
+    availableCarParts,
+    CarPartValueMap,
 } from '../types/3dModelTypes';
 
 export const useConfigurationStore = defineStore('configurationStore', {
-    state: (): {
-        bodyConfig: bodyAttributes;
-        windowsConfig: windowsAttributes;
-        rimsConfig: rimsAttributes;
-        calipersConfig: calipersAttributes;
-        sideMirrorsConfig: sideMirrorsAttributes;
-        modelPath: string;
-    } => ({
+    state: () => ({
         bodyConfig: {
             color: 'white',
             metalness: 0.8,
             roughness: 0.8,
             clearcoat: 0.1,
             clearcoatRoughness: 0.01,
-        },
+        } as bodyAttributes,
+
         windowsConfig: {
             color: 'grey',
             metalness: 0.25,
             roughness: 0,
             transmission: 1,
-        },
+        } as windowsAttributes,
+
         rimsConfig: {
             color: 'silver',
             metalness: 1,
             roughness: 0.01,
-        },
+        } as rimsAttributes,
+
         calipersConfig: {
             color: 'blue',
             metalness: 0.8,
             roughness: 0.9,
-        },
+        } as calipersAttributes,
+
         sideMirrorsConfig: {
             color: 'black',
             metalness: 0.8,
             roughness: 0.8,
             clearcoat: 0.1,
             clearcoatRoughness: 0.01,
-        },
+        } as sideMirrorsAttributes,
+
         modelPath: '/models/golf/r_modded.glb',
+
+        engine: '2.0 TSI 300 HP',
+        gearbox: 'DSG',
+        drive: 'AWD 4Motion',
+        package: 'Sport',
     }),
 
-    getters: {
-        getBodyConfig: state => state.bodyConfig,
-        getWindowsConfig: state => state.windowsConfig,
-        getRimsConfig: state => state.rimsConfig,
-        getCalipersConfig: state => state.calipersConfig,
-        getSideMirrorsConfig: state => state.sideMirrorsConfig,
-        getModelPath: state => state.modelPath,
-    },
-
     actions: {
-        setBodyColor(color: availableBodyColors) {
-            this.bodyConfig.color = color;
-        },
-        setWindowsColor(color: availableWindowTints) {
-            this.windowsConfig.color = color;
-        },
-        setRimsColor(color: availableRimsColors) {
-            this.rimsConfig.color = color;
-        },
-        setCalipersColor(color: availableCaliperColors) {
-            this.calipersConfig.color = color;
-        },
-        setSideMirrorsColor(color: availableBodyColors) {
-            this.sideMirrorsConfig.color = color;
-        },
-        setCarPartColor(
-            carPart: availableCarParts,
-            color:
-                | availableBodyColors
-                | availableCaliperColors
-                | availableRimsColors
-                | availableWindowTints
+        setCarPartValue<K extends availableCarParts>(
+            carPart: K,
+            value: CarPartValueMap[K]
         ) {
             switch (carPart) {
-                case 'all_windows':
-                    this.setWindowsColor(color);
-                    break;
                 case 'body':
-                    this.setBodyColor(color);
+                    this.bodyConfig.color = value as CarPartValueMap['body'];
                     break;
-                case 'calipers':
-                    this.setCalipersColor(color);
+
+                case 'all_windows':
+                    this.windowsConfig.color = value as CarPartValueMap['all_windows'];
                     break;
+
                 case 'rims':
-                    this.setRimsColor(color);
+                    this.rimsConfig.color = value as CarPartValueMap['rims'];
                     break;
+
+                case 'calipers':
+                    this.calipersConfig.color = value as CarPartValueMap['calipers'];
+                    break;
+
                 case 'side_mirrors':
-                    this.setSideMirrorsColor(color);
+                    this.sideMirrorsConfig.color =
+                        value as CarPartValueMap['side_mirrors'];
+                    break;
+
+                case 'engine':
+                    this.engine = value as CarPartValueMap['engine'];
+                    break;
+
+                case 'gearbox':
+                    this.gearbox = value as CarPartValueMap['gearbox'];
+                    break;
+
+                case 'drive':
+                    this.drive = value as CarPartValueMap['drive'];
                     break;
             }
-            console.log(this.bodyConfig.color);
         },
     },
 });
