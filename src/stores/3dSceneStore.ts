@@ -1,7 +1,10 @@
 import { defineStore } from 'pinia';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {
+    GLTFLoader,
+    type GLTF,
+} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { markRaw } from 'vue';
 import type {
     bodyAttributes,
@@ -32,7 +35,7 @@ type MatBase = {
     emissiveIntensity?: number;
 };
 
-export type EnvPresetName = 'Studio' | 'Garage';
+export type EnvPresetName = 'Studio' | 'City';
 export type GroundPresetName = 'Concrete' | 'Asphalt' | 'Tiles';
 
 const ENV_PRESETS: Record<EnvPresetName, string[]> = {
@@ -44,7 +47,7 @@ const ENV_PRESETS: Record<EnvPresetName, string[]> = {
         '/env/studio1/bk.png',
         '/env/studio1/ft.png',
     ],
-    Garage: [
+    City: [
         '/env/garage/rt.png',
         '/env/garage/lf.png',
         '/env/garage/up.png',
@@ -106,7 +109,14 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             this.width = width;
             this.height = height;
 
-            this.camera = markRaw(new THREE.PerspectiveCamera(40, this.width / this.height, 0.1, 100));
+            this.camera = markRaw(
+                new THREE.PerspectiveCamera(
+                    40,
+                    this.width / this.height,
+                    0.1,
+                    100
+                )
+            );
             this.camera.position.set(2.92, 1.23, 4.18);
 
             this.renderer.setSize(this.width, this.height);
@@ -128,7 +138,9 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             this.setEnvironment(this.environmentName);
             this.setGround(this.groundName);
 
-            this.controls = markRaw(new OrbitControls(this.camera, this.renderer.domElement));
+            this.controls = markRaw(
+                new OrbitControls(this.camera, this.renderer.domElement)
+            );
             this.controls.enableDamping = true;
             this.controls.target.set(0, 0.5, 0);
 
@@ -171,7 +183,7 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
                 this.groundTexture = null;
             }
 
-            const tex = new THREE.TextureLoader().load(texturePath, (t) => {
+            const tex = new THREE.TextureLoader().load(texturePath, t => {
                 t.wrapS = THREE.RepeatWrapping;
                 t.wrapT = THREE.RepeatWrapping;
                 t.repeat.set(3, 3);
@@ -205,12 +217,30 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
         // ---------- MODEL ----------
         loadModel(configuratorStore: ReturnType<typeof useConfigurationStore>) {
             // ✅ u Ciebie nie ma getterów -> bierzemy prosto ze state
-            this.materials.body = markRaw(new THREE.MeshPhysicalMaterial(configuratorStore.bodyConfig as any));
-            this.materials.windows = markRaw(new THREE.MeshPhysicalMaterial(configuratorStore.windowsConfig as any));
-            this.materials.rims = markRaw(new THREE.MeshPhysicalMaterial(configuratorStore.rimsConfig as any));
-            this.materials.calipers = markRaw(new THREE.MeshPhysicalMaterial(configuratorStore.calipersConfig as any));
+            this.materials.body = markRaw(
+                new THREE.MeshPhysicalMaterial(
+                    configuratorStore.bodyConfig as any
+                )
+            );
+            this.materials.windows = markRaw(
+                new THREE.MeshPhysicalMaterial(
+                    configuratorStore.windowsConfig as any
+                )
+            );
+            this.materials.rims = markRaw(
+                new THREE.MeshPhysicalMaterial(
+                    configuratorStore.rimsConfig as any
+                )
+            );
+            this.materials.calipers = markRaw(
+                new THREE.MeshPhysicalMaterial(
+                    configuratorStore.calipersConfig as any
+                )
+            );
             this.materials.sideMirrors = markRaw(
-                new THREE.MeshPhysicalMaterial(configuratorStore.sideMirrorsConfig as any)
+                new THREE.MeshPhysicalMaterial(
+                    configuratorStore.sideMirrorsConfig as any
+                )
             );
 
             this.loader.load(configuratorStore.modelPath, (gltf: GLTF) => {
@@ -219,7 +249,11 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
 
                 this.carRoot = car;
 
-                this.carCenter = markRaw(new THREE.Box3().setFromObject(car).getCenter(new THREE.Vector3()));
+                this.carCenter = markRaw(
+                    new THREE.Box3()
+                        .setFromObject(car)
+                        .getCenter(new THREE.Vector3())
+                );
 
                 const body = car.getObjectByName('body');
                 const glass = car.getObjectByName('all_windows');
@@ -227,11 +261,16 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
                 const rims = car.getObjectByName('rims');
                 const sideMirrors = car.getObjectByName('side_mirrors');
 
-                if (body && this.materials.body) (body as any).material = this.materials.body;
-                if (glass && this.materials.windows) (glass as any).material = this.materials.windows;
-                if (calipers && this.materials.calipers) (calipers as any).material = this.materials.calipers;
-                if (rims && this.materials.rims) (rims as any).material = this.materials.rims;
-                if (sideMirrors && this.materials.sideMirrors) (sideMirrors as any).material = this.materials.sideMirrors;
+                if (body && this.materials.body)
+                    (body as any).material = this.materials.body;
+                if (glass && this.materials.windows)
+                    (glass as any).material = this.materials.windows;
+                if (calipers && this.materials.calipers)
+                    (calipers as any).material = this.materials.calipers;
+                if (rims && this.materials.rims)
+                    (rims as any).material = this.materials.rims;
+                if (sideMirrors && this.materials.sideMirrors)
+                    (sideMirrors as any).material = this.materials.sideMirrors;
 
                 gltf.scene.traverse((obj: any) => {
                     if (obj.isMesh) {
@@ -241,6 +280,7 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
                 });
 
                 this.scene.add(car);
+                // this.lowerScene(-2);
 
                 this.refreshInteriorTargets();
                 this.captureInteriorBase();
@@ -253,6 +293,11 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
         setCameraView(view: CameraView) {
             this.cameraView = view;
             this.applyCameraMode();
+        },
+
+        lowerScene(yOffset = -0.3) {
+            if (this.carRoot) this.carRoot.position.y += yOffset;
+            if (this.ground) this.ground.position.y += yOffset;
         },
 
         applyCameraMode() {
@@ -285,7 +330,9 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             const c = this.carCenter ?? new THREE.Vector3(0, 0.9, 0);
 
             const seatPivot = c.clone().add(new THREE.Vector3(0.0, 0.3, -0.35));
-            const camPos = seatPivot.clone().add(new THREE.Vector3(0.0, 0.0, -0.06));
+            const camPos = seatPivot
+                .clone()
+                .add(new THREE.Vector3(0.0, 0.0, -0.06));
 
             this.camera.fov = 65;
             this.camera.updateProjectionMatrix();
@@ -336,27 +383,37 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
                 const mesh = obj as THREE.Mesh;
                 const n = String(mesh.name || '');
 
-                if (n.includes('Leather_Int')) this.interiorTargets.seats.push(mesh);
-                if (n.includes('display')) this.interiorTargets.display.push(mesh);
+                if (n.includes('Leather_Int'))
+                    this.interiorTargets.seats.push(mesh);
+                if (n.includes('display'))
+                    this.interiorTargets.display.push(mesh);
             });
         },
 
         captureInteriorBase() {
             this.interiorBase = {};
-            const all = [...this.interiorTargets.seats, ...this.interiorTargets.display];
+            const all = [
+                ...this.interiorTargets.seats,
+                ...this.interiorTargets.display,
+            ];
 
             for (const mesh of all) {
-                const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+                const mats = Array.isArray(mesh.material)
+                    ? mesh.material
+                    : [mesh.material];
                 for (const m of mats as any[]) {
                     if (!m?.uuid) continue;
                     if (this.interiorBase[m.uuid]) continue;
 
                     const base: MatBase = {};
                     if (m.color) base.color = m.color.clone();
-                    if (typeof m.roughness === 'number') base.roughness = m.roughness;
-                    if (typeof m.metalness === 'number') base.metalness = m.metalness;
+                    if (typeof m.roughness === 'number')
+                        base.roughness = m.roughness;
+                    if (typeof m.metalness === 'number')
+                        base.metalness = m.metalness;
                     if (m.emissive) base.emissive = m.emissive.clone();
-                    if (typeof m.emissiveIntensity === 'number') base.emissiveIntensity = m.emissiveIntensity;
+                    if (typeof m.emissiveIntensity === 'number')
+                        base.emissiveIntensity = m.emissiveIntensity;
 
                     this.interiorBase[m.uuid] = base;
                 }
@@ -372,10 +429,20 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             }
 
             const seat = this.mapSeatTone(state.seatTone);
-            this.tintGroup(this.interiorTargets.seats, seat.tint, seat.roughnessDelta, 0, seat.strength);
+            this.tintGroup(
+                this.interiorTargets.seats,
+                seat.tint,
+                seat.roughnessDelta,
+                0,
+                seat.strength
+            );
 
             const screen = this.mapScreenColor(state.screenColor);
-            this.setEmissiveGroup(this.interiorTargets.display, screen.color, screen.intensity);
+            this.setEmissiveGroup(
+                this.interiorTargets.display,
+                screen.color,
+                screen.intensity
+            );
         },
 
         tintGroup(
@@ -386,40 +453,66 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             strength: number
         ) {
             for (const mesh of meshes) {
-                const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+                const mats = Array.isArray(mesh.material)
+                    ? mesh.material
+                    : [mesh.material];
                 for (const m of mats as any[]) {
                     const base = this.interiorBase[m?.uuid];
                     if (!base) continue;
 
                     if (m.color && base.color) {
-                        m.color.copy(base.color.clone().lerp(tintColor, strength));
+                        m.color.copy(
+                            base.color.clone().lerp(tintColor, strength)
+                        );
                         m.needsUpdate = true;
                     }
 
-                    if (typeof base.roughness === 'number' && typeof m.roughness === 'number') {
-                        m.roughness = this.clamp01(base.roughness + roughnessDelta);
+                    if (
+                        typeof base.roughness === 'number' &&
+                        typeof m.roughness === 'number'
+                    ) {
+                        m.roughness = this.clamp01(
+                            base.roughness + roughnessDelta
+                        );
                         m.needsUpdate = true;
                     }
 
-                    if (typeof base.metalness === 'number' && typeof m.metalness === 'number') {
-                        m.metalness = this.clamp01(base.metalness + metalnessDelta);
+                    if (
+                        typeof base.metalness === 'number' &&
+                        typeof m.metalness === 'number'
+                    ) {
+                        m.metalness = this.clamp01(
+                            base.metalness + metalnessDelta
+                        );
                         m.needsUpdate = true;
                     }
                 }
             }
         },
 
-        setEmissiveGroup(meshes: THREE.Mesh[], color: THREE.Color, intensity: number) {
+        setEmissiveGroup(
+            meshes: THREE.Mesh[],
+            color: THREE.Color,
+            intensity: number
+        ) {
             for (const mesh of meshes) {
-                const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+                const mats = Array.isArray(mesh.material)
+                    ? mesh.material
+                    : [mesh.material];
                 for (const m of mats as any[]) {
                     const base = this.interiorBase[m?.uuid];
                     if (!base) continue;
 
-                    if (!m.emissive || typeof m.emissiveIntensity !== 'number') continue;
+                    if (!m.emissive || typeof m.emissiveIntensity !== 'number')
+                        continue;
 
-                    const baseEm = base.emissive ? base.emissive.clone() : new THREE.Color('#000000');
-                    const baseInt = typeof base.emissiveIntensity === 'number' ? base.emissiveIntensity : 0;
+                    const baseEm = base.emissive
+                        ? base.emissive.clone()
+                        : new THREE.Color('#000000');
+                    const baseInt =
+                        typeof base.emissiveIntensity === 'number'
+                            ? base.emissiveIntensity
+                            : 0;
 
                     m.emissive.copy(baseEm.clone().lerp(color, 0.9));
                     m.emissiveIntensity = Math.max(baseInt, intensity);
@@ -429,8 +522,17 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
         },
 
         mapSeatTone(v: string) {
-            if (v === 'Alcantara') return { tint: new THREE.Color('#151515'), roughnessDelta: 0.18, strength: 0.16 };
-            return { tint: new THREE.Color('#1f1f1f'), roughnessDelta: 0.08, strength: 0.12 };
+            if (v === 'Alcantara')
+                return {
+                    tint: new THREE.Color('#151515'),
+                    roughnessDelta: 0.18,
+                    strength: 0.16,
+                };
+            return {
+                tint: new THREE.Color('#1f1f1f'),
+                roughnessDelta: 0.08,
+                strength: 0.12,
+            };
         },
 
         mapScreenColor(v: string) {
@@ -438,10 +540,10 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
                 v === 'Red'
                     ? new THREE.Color('#ff3b30')
                     : v === 'White'
-                        ? new THREE.Color('#ffffff')
-                        : v === 'Green'
-                            ? new THREE.Color('#34c759')
-                            : new THREE.Color('#2b6cff');
+                    ? new THREE.Color('#ffffff')
+                    : v === 'Green'
+                    ? new THREE.Color('#34c759')
+                    : new THREE.Color('#2b6cff');
 
             return { color, intensity: 1.4 };
         },
@@ -488,7 +590,8 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             this.materials.sideMirrors.metalness = config.metalness;
             this.materials.sideMirrors.roughness = config.roughness;
             this.materials.sideMirrors.clearcoat = config.clearcoat;
-            this.materials.sideMirrors.clearcoatRoughness = config.clearcoatRoughness;
+            this.materials.sideMirrors.clearcoatRoughness =
+                config.clearcoatRoughness;
             this.materials.sideMirrors.needsUpdate = true;
         },
 
