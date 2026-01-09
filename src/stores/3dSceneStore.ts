@@ -2,7 +2,6 @@ import { defineStore } from 'pinia';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { useConfigurationStore } from './configuratorStore';
 import { markRaw } from 'vue';
 import type {
     bodyAttributes,
@@ -11,6 +10,7 @@ import type {
     sideMirrorsAttributes,
     windowsAttributes,
 } from '../types/3dModelTypes';
+import { useConfigurationStore } from './configuratorStore';
 
 type CameraView = 'EXTERIOR' | 'INTERIOR';
 
@@ -32,70 +32,72 @@ type MatBase = {
     emissiveIntensity?: number;
 };
 
+export type EnvPresetName = 'Studio' | 'Garage';
+export type GroundPresetName = 'Concrete' | 'Asphalt' | 'Tiles';
+
+const ENV_PRESETS: Record<EnvPresetName, string[]> = {
+    Studio: [
+        '/env/studio1/rt.png',
+        '/env/studio1/lf.png',
+        '/env/studio1/up.png',
+        '/env/studio1/dn.png',
+        '/env/studio1/bk.png',
+        '/env/studio1/ft.png',
+    ],
+    Garage: [
+        '/env/garage/rt.png',
+        '/env/garage/lf.png',
+        '/env/garage/up.png',
+        '/env/garage/dn.png',
+        '/env/garage/bk.png',
+        '/env/garage/ft.png',
+    ],
+};
+
+const GROUND_PRESETS: Record<GroundPresetName, string> = {
+    Concrete: '/ground/concrete.jpg',
+    Asphalt: '/ground/asphalt.jpg',
+    Tiles: '/ground/tiles.jpg',
+};
+
 export const use3dSceneStore = defineStore('3dSceneStore', {
-    state: (): {
-        width: number;
-        height: number;
-
-        scene: THREE.Scene;
-        camera: THREE.PerspectiveCamera | null;
-        renderer: THREE.WebGLRenderer;
-
-        ambientLight: THREE.AmbientLight;
-        dirLight: THREE.DirectionalLight;
-        skybox: THREE.CubeTextureLoader | null;
-
-        ground: THREE.Mesh | null;
-        controls: OrbitControls | null;
-        loader: GLTFLoader;
-
-        cameraPosition: { x: any; y: any; z: any };
-
-        cameraView: CameraView;
-        carCenter: THREE.Vector3 | null;
-
-        carRoot: THREE.Object3D | null;
-        interiorTargets: InteriorTargets;
-        interiorBase: Record<string, MatBase>;
-
-        materials: {
-            body: THREE.MeshPhysicalMaterial | null;
-            windows: THREE.MeshPhysicalMaterial | null;
-            rims: THREE.MeshPhysicalMaterial | null;
-            calipers: THREE.MeshPhysicalMaterial | null;
-            sideMirrors: THREE.MeshPhysicalMaterial | null;
-        };
-    } => ({
+    state: () => ({
         width: 1,
         height: 1,
 
         scene: markRaw(new THREE.Scene()),
-        camera: null,
+        camera: null as THREE.PerspectiveCamera | null,
         renderer: markRaw(new THREE.WebGLRenderer({ antialias: true })),
 
         ambientLight: markRaw(new THREE.AmbientLight(0xffffff, 0.8)),
         dirLight: markRaw(new THREE.DirectionalLight(0xffffff, 1)),
-        skybox: null,
 
-        ground: null,
-        controls: null,
+        skybox: null as THREE.CubeTexture | null,
+
+        ground: null as THREE.Mesh | null,
+        groundTexture: null as THREE.Texture | null,
+
+        controls: null as OrbitControls | null,
         loader: markRaw(new GLTFLoader()),
 
         cameraPosition: { x: 0, y: 0, z: 0 },
 
-        cameraView: 'EXTERIOR',
-        carCenter: null,
+        cameraView: 'EXTERIOR' as CameraView,
+        carCenter: null as THREE.Vector3 | null,
 
-        carRoot: null,
-        interiorTargets: { seats: [], display: [] },
-        interiorBase: {},
+        environmentName: 'Studio' as EnvPresetName,
+        groundName: 'Concrete' as GroundPresetName,
+
+        carRoot: null as THREE.Object3D | null,
+        interiorTargets: { seats: [], display: [] } as InteriorTargets,
+        interiorBase: {} as Record<string, MatBase>,
 
         materials: {
-            body: null,
-            windows: null,
-            rims: null,
-            calipers: null,
-            sideMirrors: null,
+            body: null as THREE.MeshPhysicalMaterial | null,
+            windows: null as THREE.MeshPhysicalMaterial | null,
+            rims: null as THREE.MeshPhysicalMaterial | null,
+            calipers: null as THREE.MeshPhysicalMaterial | null,
+            sideMirrors: null as THREE.MeshPhysicalMaterial | null,
         },
     }),
 
@@ -104,9 +106,7 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             this.width = width;
             this.height = height;
 
-            this.camera = markRaw(
-                new THREE.PerspectiveCamera(40, this.width / this.height, 0.1, 100)
-            );
+            this.camera = markRaw(new THREE.PerspectiveCamera(40, this.width / this.height, 0.1, 100));
             this.camera.position.set(2.92, 1.23, 4.18);
 
             this.renderer.setSize(this.width, this.height);
@@ -124,41 +124,9 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             this.dirLight.shadow.camera.far = 50;
             this.scene.add(this.dirLight);
 
-            this.skybox = markRaw(
-                new THREE.CubeTextureLoader().load([
-                    '/env/20250701_162804_0694_rt.png',
-                    '/env/20250701_162804_0694_lf.png',
-                    '/env/20250701_162804_0694_up.png',
-                    '/env/20250701_162804_0694_dn.png',
-                    '/env/20250701_162804_0694_bk.png',
-                    '/env/20250701_162804_0694_ft.png',
-                ])
-            );
-            this.scene.environment = this.skybox;
-            this.scene.background = this.skybox;
-
-            const groundTexture = markRaw(
-                new THREE.TextureLoader().load('/env/concrete.jpg', (texture: THREE.Texture) => {
-                    texture.wrapS = THREE.RepeatWrapping;
-                    texture.wrapT = THREE.RepeatWrapping;
-                    texture.repeat.set(3, 3);
-                    texture.colorSpace = THREE.SRGBColorSpace;
-                })
-            );
-
-            this.ground = markRaw(
-                new THREE.Mesh(
-                    new THREE.PlaneGeometry(20, 20),
-                    new THREE.MeshStandardMaterial({
-                        map: groundTexture,
-                        roughness: 0.9,
-                        metalness: 0,
-                    })
-                )
-            );
-            this.ground.rotation.x = -Math.PI / 2;
-            this.ground.receiveShadow = true;
-            this.scene.add(this.ground);
+            // ✅ tło + podłoże z presetów
+            this.setEnvironment(this.environmentName);
+            this.setGround(this.groundName);
 
             this.controls = markRaw(new OrbitControls(this.camera, this.renderer.domElement));
             this.controls.enableDamping = true;
@@ -168,12 +136,82 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             this.controls.update();
         },
 
+        // ---------- ENV ----------
+        setEnvironment(name: EnvPresetName) {
+            const files = ENV_PRESETS[name];
+            if (!files) return;
+
+            this.environmentName = name;
+
+            if (this.skybox) {
+                this.skybox.dispose();
+                this.skybox = null;
+            }
+
+            const cube = new THREE.CubeTextureLoader().load(files);
+            cube.colorSpace = THREE.SRGBColorSpace;
+
+            this.skybox = markRaw(cube);
+            this.scene.environment = this.skybox;
+            this.scene.background = this.skybox;
+        },
+
+        // ---------- GROUND ----------
+        setGround(name: GroundPresetName) {
+            const texturePath = GROUND_PRESETS[name];
+            if (!texturePath) return;
+
+            this.groundName = name;
+            this.createOrUpdateGround(texturePath);
+        },
+
+        createOrUpdateGround(texturePath: string) {
+            if (this.groundTexture) {
+                this.groundTexture.dispose();
+                this.groundTexture = null;
+            }
+
+            const tex = new THREE.TextureLoader().load(texturePath, (t) => {
+                t.wrapS = THREE.RepeatWrapping;
+                t.wrapT = THREE.RepeatWrapping;
+                t.repeat.set(3, 3);
+                t.colorSpace = THREE.SRGBColorSpace;
+                t.needsUpdate = true;
+            });
+
+            this.groundTexture = markRaw(tex);
+
+            if (!this.ground) {
+                this.ground = markRaw(
+                    new THREE.Mesh(
+                        new THREE.PlaneGeometry(20, 20),
+                        new THREE.MeshStandardMaterial({
+                            map: this.groundTexture,
+                            roughness: 0.9,
+                            metalness: 0,
+                        })
+                    )
+                );
+                this.ground.rotation.x = -Math.PI / 2;
+                this.ground.receiveShadow = true;
+                this.scene.add(this.ground);
+            } else {
+                const mat = this.ground.material as THREE.MeshStandardMaterial;
+                mat.map = this.groundTexture;
+                mat.needsUpdate = true;
+            }
+        },
+
+        // ---------- MODEL ----------
         loadModel(configuratorStore: ReturnType<typeof useConfigurationStore>) {
-            this.materials.body = markRaw(new THREE.MeshPhysicalMaterial(configuratorStore.getBodyConfig));
-            this.materials.windows = markRaw(new THREE.MeshPhysicalMaterial(configuratorStore.getWindowsConfig));
-            this.materials.rims = markRaw(new THREE.MeshPhysicalMaterial(configuratorStore.getRimsConfig));
-            this.materials.calipers = markRaw(new THREE.MeshPhysicalMaterial(configuratorStore.getCalipersConfig));
-            this.materials.sideMirrors = markRaw(new THREE.MeshPhysicalMaterial(configuratorStore.getSideMirrorsConfig));
+            // ✅ u Ciebie nie ma getterów -> bierzemy prosto ze state
+            this.materials.body = markRaw(new THREE.MeshPhysicalMaterial(configuratorStore.bodyConfig as any));
+            this.materials.windows = markRaw(new THREE.MeshPhysicalMaterial(configuratorStore.windowsConfig as any));
+            this.materials.rims = markRaw(new THREE.MeshPhysicalMaterial(configuratorStore.rimsConfig as any));
+            this.materials.calipers = markRaw(new THREE.MeshPhysicalMaterial(configuratorStore.calipersConfig as any));
+            this.materials.sideMirrors = markRaw(
+                new THREE.MeshPhysicalMaterial(configuratorStore.sideMirrorsConfig as any)
+            );
 
             this.loader.load(configuratorStore.modelPath, (gltf: GLTF) => {
                 const car = gltf.scene.children[0];
@@ -181,9 +219,7 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
 
                 this.carRoot = car;
 
-                this.carCenter = markRaw(
-                    new THREE.Box3().setFromObject(car).getCenter(new THREE.Vector3())
-                );
+                this.carCenter = markRaw(new THREE.Box3().setFromObject(car).getCenter(new THREE.Vector3()));
 
                 const body = car.getObjectByName('body');
                 const glass = car.getObjectByName('all_windows');
@@ -213,6 +249,7 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             });
         },
 
+        // ---------- CAMERA ----------
         setCameraView(view: CameraView) {
             this.cameraView = view;
             this.applyCameraMode();
@@ -247,7 +284,7 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
 
             const c = this.carCenter ?? new THREE.Vector3(0, 0.9, 0);
 
-            const seatPivot = c.clone().add(new THREE.Vector3(0.0, 0.30, -0.35));
+            const seatPivot = c.clone().add(new THREE.Vector3(0.0, 0.3, -0.35));
             const camPos = seatPivot.clone().add(new THREE.Vector3(0.0, 0.0, -0.06));
 
             this.camera.fov = 65;
@@ -271,9 +308,6 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
 
             this.controls.minPolarAngle = 0;
             this.controls.maxPolarAngle = Math.PI / 2;
-
-            this.controls.minAzimuthAngle = -Infinity;
-            this.controls.maxAzimuthAngle = Infinity;
         },
 
         applyControlsForInterior() {
@@ -290,11 +324,9 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
 
             this.controls.minPolarAngle = 0;
             this.controls.maxPolarAngle = Math.PI;
-
-            this.controls.minAzimuthAngle = -Infinity;
-            this.controls.maxAzimuthAngle = Infinity;
         },
 
+        // ---------- INTERIOR ----------
         refreshInteriorTargets() {
             this.interiorTargets = { seats: [], display: [] };
             if (!this.carRoot) return;
@@ -403,9 +435,12 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
 
         mapScreenColor(v: string) {
             const color =
-                v === 'Red' ? new THREE.Color('#ff3b30')
-                    : v === 'White' ? new THREE.Color('#ffffff')
-                        : v === 'Green' ? new THREE.Color('#34c759')
+                v === 'Red'
+                    ? new THREE.Color('#ff3b30')
+                    : v === 'White'
+                        ? new THREE.Color('#ffffff')
+                        : v === 'Green'
+                            ? new THREE.Color('#34c759')
                             : new THREE.Color('#2b6cff');
 
             return { color, intensity: 1.4 };
@@ -415,6 +450,7 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             return Math.max(0, Math.min(1, n));
         },
 
+        // ---------- MATERIAL UPDATES ----------
         updateBodyMaterial(config: bodyAttributes) {
             if (!this.materials.body) return;
 

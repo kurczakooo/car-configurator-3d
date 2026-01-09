@@ -1,13 +1,24 @@
 <script setup lang="ts">
-import { computed, watch, ref } from 'vue';
+import { computed, watch } from 'vue';
 import { useConfigurationStore } from '../stores/configuratorStore';
-import { use3dSceneStore } from '../stores/3dSceneStore';
+import { use3dSceneStore, type EnvPresetName, type GroundPresetName } from '../stores/3dSceneStore';
 import { useInteriorStore } from '../stores/interiorStore';
 import type { availableCarParts, CarPartValueMap } from '../types/3dModelTypes';
 
 const configuratorStore = useConfigurationStore();
 const sceneStore = use3dSceneStore();
 const interiorStore = useInteriorStore();
+
+const ENV_OPTIONS: { label: string; value: EnvPresetName }[] = [
+  { label: 'Studio', value: 'Studio' },
+  { label: 'Garage', value: 'Garage' },
+];
+
+const GROUND_OPTIONS: { label: string; value: GroundPresetName }[] = [
+  { label: 'Concrete', value: 'Concrete' },
+  { label: 'Asphalt', value: 'Asphalt' },
+  { label: 'Tiles', value: 'Tiles' },
+];
 
 const BASE_PRICE_USD = 32000;
 
@@ -84,11 +95,11 @@ type ExteriorSection<K extends availableCarParts> = {
   options: ConfigOption<CarPartValueMap[K]>[];
 };
 
-type InteriorSection = {
+type InteriorSection<T extends string> = {
   title: string;
-  selected: () => string;
-  setSelected: (v: string) => void;
-  options: ConfigOption<string>[];
+  selected: () => T;
+  setSelected: (v: T) => void;
+  options: ConfigOption<T>[];
 };
 
 const exteriorSections: ExteriorSection<availableCarParts>[] = [
@@ -178,7 +189,7 @@ const exteriorSections: ExteriorSection<availableCarParts>[] = [
   },
 ];
 
-const interiorSections: InteriorSection[] = [
+const interiorSections: InteriorSection<string>[] = [
   {
     title: 'Seat tone',
     selected: () => interiorStore.seatTone,
@@ -237,11 +248,6 @@ const totalPriceUsd = computed(() => BASE_PRICE_USD + addOnPriceUsd.value);
 function formatUsd(v: number) {
   return `$${v.toLocaleString('en-US')}`;
 }
-
-const summaryClicked = ref(false);
-function onSummary() {
-  summaryClicked.value = true;
-}
 </script>
 
 <template>
@@ -271,6 +277,38 @@ function onSummary() {
     </div>
 
     <div class="panel-scroll">
+      <!-- ✅ Environment -->
+      <div class="config-section">
+        <h2>Environment</h2>
+        <div class="option-grid">
+          <button
+              v-for="o in ENV_OPTIONS"
+              :key="o.value"
+              :class="{ selected: sceneStore.environmentName === o.value }"
+              @click="sceneStore.setEnvironment(o.value)"
+          >
+            <div class="btn-label">{{ o.label }}</div>
+            <div class="btn-price">Background</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- ✅ Ground -->
+      <div class="config-section">
+        <h2>Ground</h2>
+        <div class="option-grid">
+          <button
+              v-for="o in GROUND_OPTIONS"
+              :key="o.value"
+              :class="{ selected: sceneStore.groundName === o.value }"
+              @click="sceneStore.setGround(o.value)"
+          >
+            <div class="btn-label">{{ o.label }}</div>
+            <div class="btn-price">Surface</div>
+          </button>
+        </div>
+      </div>
+
       <template v-if="isExterior">
         <div v-for="section in exteriorSections" :key="section.title" class="config-section">
           <h2>{{ section.title }}</h2>
@@ -298,7 +336,7 @@ function onSummary() {
                 v-for="option in section.options"
                 :key="String(option.value)"
                 :class="{ selected: section.selected() === option.value }"
-                @click="section.setSelected(String(option.value))"
+                @click="section.setSelected(option.value)"
             >
               <div class="btn-label">{{ option.label }}</div>
               <div class="btn-price">{{ formatUsd(option.priceUsd ?? 0) }}</div>
@@ -310,7 +348,7 @@ function onSummary() {
       <div class="scroll-spacer"></div>
     </div>
 
-    <div class="panel-footer" :class="{ active: summaryClicked }">
+    <div class="panel-footer">
       <div class="pricing-rows">
         <div class="pricing-row">
           <div class="pricing-label">Base price</div>
@@ -325,8 +363,6 @@ function onSummary() {
           <div class="pricing-value">{{ formatUsd(totalPriceUsd) }}</div>
         </div>
       </div>
-
-<!--      <button class="summary-btn" @click="onSummary">Podsumowanie</button>-->
     </div>
   </div>
 </template>
@@ -398,13 +434,6 @@ function onSummary() {
 .pricing-row.total .pricing-label,
 .pricing-row.total .pricing-value {
   font-size: 16px;
-  font-weight: 700;
-}
-
-.summary-btn {
-  width: 100%;
-  padding: 12px 14px;
-  border-radius: 12px;
   font-weight: 700;
 }
 </style>
