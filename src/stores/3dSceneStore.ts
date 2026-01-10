@@ -134,7 +134,6 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             this.dirLight.shadow.camera.far = 50;
             this.scene.add(this.dirLight);
 
-            // ✅ tło + podłoże z presetów
             this.setEnvironment(this.environmentName);
             this.setGround(this.groundName);
 
@@ -148,7 +147,6 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             this.controls.update();
         },
 
-        // ---------- ENV ----------
         setEnvironment(name: EnvPresetName) {
             const files = ENV_PRESETS[name];
             if (!files) return;
@@ -168,7 +166,6 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             this.scene.background = this.skybox;
         },
 
-        // ---------- GROUND ----------
         setGround(name: GroundPresetName) {
             const texturePath = GROUND_PRESETS[name];
             if (!texturePath) return;
@@ -214,7 +211,6 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             }
         },
 
-        // ---------- MODEL ----------
         loadModel(configuratorStore: ReturnType<typeof useConfigurationStore>) {
             // ✅ u Ciebie nie ma getterów -> bierzemy prosto ze state
             this.materials.body = markRaw(
@@ -289,7 +285,6 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             });
         },
 
-        // ---------- CAMERA ----------
         setCameraView(view: CameraView) {
             this.cameraView = view;
             this.applyCameraMode();
@@ -552,7 +547,6 @@ export const use3dSceneStore = defineStore('3dSceneStore', {
             return Math.max(0, Math.min(1, n));
         },
 
-        // ---------- MATERIAL UPDATES ----------
         updateBodyMaterial(config: bodyAttributes) {
             if (!this.materials.body) return;
 

@@ -397,7 +397,6 @@ function formatUsd(v: number) {
         </div>
 
         <div class="panel-scroll">
-            <!-- ✅ Environment -->
             <div class="config-section">
                 <h2>Environment</h2>
                 <div class="option-grid">
@@ -415,7 +414,6 @@ function formatUsd(v: number) {
                 </div>
             </div>
 
-            <!-- ✅ Ground -->
             <div class="config-section">
                 <h2>Ground</h2>
                 <div class="option-grid">
